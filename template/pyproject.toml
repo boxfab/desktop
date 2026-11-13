@@ -1,0 +1,18 @@
+[project]
+name = "boxfab-desktop-template"
+version = "0.1.0"
+description = "Build scripts for the BoxFab desktop sandbox template"
+requires-python = ">=3.11"
+# Upstream depends on e2b>=2.20.3,<3 and builds with the E2B template SDK; this builds the same
+# template with the BoxFab SDK.
+dependencies = [
+    "boxfab>=0.1.0a2,<0.2",
+]
+
+[dependency-groups]
+dev = [
+    "dotenv>=0.9.9,<0.10",
+]
+
+[tool.uv]
+package = false
