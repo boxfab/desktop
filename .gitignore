@@ -11,3 +11,7 @@ node_modules/
 .env
 *.env
 template/uv.lock
+
+# Notes for AI agents and reviewers, kept locally
+AGENTS.md
+CLAUDE.md
