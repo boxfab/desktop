@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- README "Under the hood": using the E2B Desktop SDKs with BoxFab (`E2B_DOMAIN` and `E2B_API_KEY`),
+  tested with `e2b-desktop` 2.7.2 (Python) and `@e2b/desktop` 2.5.0 (JavaScript).
 - The repository holds the desktop sandbox template and the examples, like `e2b-dev/desktop`. The
   SDKs moved next to the core SDKs: `boxfab-desktop` to
   [boxfab/python-sdk](https://github.com/boxfab/python-sdk/tree/main/desktop) and
