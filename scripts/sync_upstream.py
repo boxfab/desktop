@@ -211,8 +211,13 @@ def audit():
     problems = []
     paths = [*[ROOT / "template" / n for n in TEMPLATE_FILES], ROOT / "README.md",
              *[ROOT / "examples" / n / "README.md" for n in EXAMPLES]]
+    # Our own README text (overlay/readme/) may name the E2B packages and variables on purpose, e.g.
+    # how to use the E2B Desktop SDKs with BoxFab; only text that came from upstream is checked.
+    own = {ln for f in (ROOT / "overlay/readme").glob("*.md") for ln in f.read_text().splitlines() if ln.strip()}
     for p in paths:
         for i, line in enumerate(p.read_text().splitlines(), 1):
+            if p.name == "README.md" and p.parent == ROOT and line in own:
+                continue
             # noVNC's branch is also named e2b-desktop, so the pip name is checked in docs only
             checks = FORBIDDEN + ([(PIP_NAME, "upstream package name")] if p.suffix == ".md" else [])
             for rx, what in checks:
