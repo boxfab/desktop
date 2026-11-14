@@ -1,6 +1,6 @@
 """Generate the BoxFab branding files for the desktop template (run by hand, output is committed).
 
-  python/.venv/bin/python scripts/make_branding.py
+  uv run --no-project --with pillow python scripts/make_branding.py
 
 Writes overlay/template/files/wallpaper.png (replaces upstream's E2B wallpaper) and
 overlay/template/files/novnc-icons/ (favicons, app icons and the web manifest for the noVNC
