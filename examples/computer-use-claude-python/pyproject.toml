@@ -1,0 +1,12 @@
+[project]
+name = "computer-use-claude-python"
+version = "0.1.0"
+description = "Claude operates a BoxFab desktop (example)"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=2.8,<3",
+    "boxfab-desktop>=0.1.0a1,<0.2",
+]
+
+[tool.uv]
+package = false

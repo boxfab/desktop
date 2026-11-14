@@ -1,7 +1,7 @@
 name: CI
 
-# Offline checks only: no credentials in this workflow. Live tests (sandboxes on BoxFab) run by
-# hand, see README.md. Release workflows are added once publishing is approved.
+# Offline checks only: no credentials in this workflow. The SDKs and their tests are in
+# boxfab/python-sdk and boxfab/js-sdk (desktop/).
 
 on:
   pull_request:
@@ -15,68 +15,6 @@ env:
   UV_VERSION: "0.11.32"
 
 jobs:
-  python:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ["3.11", "3.12", "3.13"]
-    defaults:
-      run:
-        working-directory: python
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
-        with:
-          version: ${{ env.UV_VERSION }}
-          python-version: ${{ matrix.python }}
-      - run: uv sync --locked
-      - name: Unit tests (offline), with E2B_* set to show they are ignored
-        env:
-          E2B_API_KEY: e2b_must_be_ignored
-          E2B_DOMAIN: e2b.app
-        run: uv run pytest tests/test_client.py tests/test_readiness.py -p no:cacheprovider
-      - run: uv build
-      - name: Install the wheel in a clean environment
-        run: |
-          python -m venv /tmp/clean
-          /tmp/clean/bin/pip install dist/*.whl
-          cd /tmp && E2B_DOMAIN=e2b.app /tmp/clean/bin/python -c "
-          import boxfab, boxfab_desktop
-          from boxfab_desktop import Sandbox, BoxFab, E2B
-          assert E2B is BoxFab and Sandbox.default_template == 'desktop'
-          assert boxfab.ConnectionConfig().domain == 'boxfab.io'
-          print('ok', boxfab_desktop.__file__)"
-
-  js:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    defaults:
-      run:
-        working-directory: js
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
-      - run: npm ci
-      - run: npm run build
-      - name: Unit tests (offline), with E2B_* set to show they are ignored
-        env:
-          E2B_API_KEY: e2b_must_be_ignored
-          E2B_DOMAIN: e2b.app
-        run: npm test
-      - name: Built bundle imports boxfab, never e2b, and links no E2B domain
-        run: |
-          ! grep -nE 'from "e2b"|require\("e2b"\)|e2b\.app|e2b\.dev' dist/index.js dist/index.mjs
-          grep -q 'from "boxfab"' dist/index.mjs
-      - run: npm pack --dry-run
-
   template:
     # The template definition must render with the BoxFab SDK (no build, no credentials).
     runs-on: ubuntu-latest
@@ -85,7 +23,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version: ${{ env.UV_VERSION }}
           python-version: "3.12"
@@ -99,8 +37,21 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
       - run: python scripts/sync_upstream.py
       - run: git status --porcelain && git diff --exit-code && test -z "$(git status --porcelain)"
+
+  examples:
+    # The Python example must at least compile; it needs keys to run (see its README).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - run: python -m py_compile examples/computer-use-claude-python/main.py
