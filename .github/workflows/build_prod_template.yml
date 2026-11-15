@@ -1,0 +1,111 @@
+name: Build production template
+
+# Rebuilds the platform template `desktop`, or points it back at an earlier build. Manual only.
+# The API key of the team that owns the template exists only in the `production` environment,
+# which needs a maintainer's approval for every run and deploys from `main` only; pull requests
+# never see it. Every build first tags the current build `pre-build-<run number>` for rollback.
+
+on:
+  workflow_dispatch:
+    inputs:
+      rollback_to:
+        description: "Instead of building, point `default` back at this tag (e.g. pre-build-3). Leave empty to build."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-prod-template
+  cancel-in-progress: false
+
+env:
+  UV_VERSION: "0.11.32"
+  TEMPLATE: desktop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    # The key is given only to the steps that call BoxFab (step-level env), never to the
+    # third-party actions; dependencies are installed before, without it, from the hash-pinned lock.
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version: ${{ env.UV_VERSION }}
+          python-version: "3.12"
+
+      - name: Install the build dependencies (no key)
+        working-directory: template
+        run: uv sync --locked
+
+      - name: Current tags
+        env:
+          BOXFAB_API_KEY: ${{ secrets.BOXFAB_PROD_API_KEY }}
+          BOXFAB_DOMAIN: ${{ secrets.BOXFAB_DOMAIN }}
+        run: |
+          api="https://api.$BOXFAB_DOMAIN"
+          id=$(curl -sf "$api/templates" -H "X-API-Key: $BOXFAB_API_KEY" | jq -r --arg t "$TEMPLATE" \
+            '.[] | select(((.aliases // []) + (.names // [])) | index($t)) | .templateID' | head -1)
+          [ -n "$id" ] || { echo "template $TEMPLATE not found for this key" >&2; exit 1; }
+          echo "TEMPLATE_ID=$id" >> "$GITHUB_ENV"
+          echo "$TEMPLATE is $id; tags:"
+          curl -sf "$api/templates/$id/tags" -H "X-API-Key: $BOXFAB_API_KEY" | jq -c .
+
+      - name: Roll back
+        if: inputs.rollback_to != ''
+        env:
+          BOXFAB_API_KEY: ${{ secrets.BOXFAB_PROD_API_KEY }}
+          BOXFAB_DOMAIN: ${{ secrets.BOXFAB_DOMAIN }}
+          ROLLBACK_TO: ${{ inputs.rollback_to }}
+        run: |
+          [[ "$ROLLBACK_TO" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "invalid tag" >&2; exit 1; }
+          curl -sf -X POST "https://api.$BOXFAB_DOMAIN/templates/tags" -H "X-API-Key: $BOXFAB_API_KEY" \
+            -H 'Content-Type: application/json' \
+            -d "{\"target\":\"$TEMPLATE:$ROLLBACK_TO\",\"tags\":[\"default\"]}" | jq -c .
+
+      - name: Tag the current build for rollback
+        if: inputs.rollback_to == ''
+        env:
+          BOXFAB_API_KEY: ${{ secrets.BOXFAB_PROD_API_KEY }}
+          BOXFAB_DOMAIN: ${{ secrets.BOXFAB_DOMAIN }}
+        run: |
+          tag="pre-build-${{ github.run_number }}"
+          curl -sf -X POST "https://api.$BOXFAB_DOMAIN/templates/tags" -H "X-API-Key: $BOXFAB_API_KEY" \
+            -H 'Content-Type: application/json' \
+            -d "{\"target\":\"$TEMPLATE:default\",\"tags\":[\"$tag\"]}" | jq -c .
+          echo "Roll back with: rollback_to = $tag"
+
+      - name: Build
+        if: inputs.rollback_to == ''
+        working-directory: template
+        env:
+          BOXFAB_API_KEY: ${{ secrets.BOXFAB_PROD_API_KEY }}
+          BOXFAB_DOMAIN: ${{ secrets.BOXFAB_DOMAIN }}
+        run: uv run --locked python build_prod.py
+
+      - name: Start a sandbox from it
+        working-directory: template
+        env:
+          BOXFAB_API_KEY: ${{ secrets.BOXFAB_PROD_API_KEY }}
+          BOXFAB_DOMAIN: ${{ secrets.BOXFAB_DOMAIN }}
+        run: |
+          uv run --locked python - <<'PY'
+          from boxfab import Sandbox
+          with Sandbox.create("desktop", timeout=180) as sandbox:
+              print(sandbox.commands.run("uname -sr && test -n \"$(command -v xfce4-session)\" && echo desktop ok").stdout)
+          PY
+
+      - name: Tags now
+        if: always()
+        env:
+          BOXFAB_API_KEY: ${{ secrets.BOXFAB_PROD_API_KEY }}
+          BOXFAB_DOMAIN: ${{ secrets.BOXFAB_DOMAIN }}
+        run: |
+          curl -sf "https://api.$BOXFAB_DOMAIN/templates/$TEMPLATE_ID/tags" -H "X-API-Key: $BOXFAB_API_KEY" | jq -c . || true
