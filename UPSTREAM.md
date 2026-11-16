@@ -53,7 +53,7 @@ has an `e2b` import, an upstream package name, an `E2B_*` configuration variable
 - **Stream auth stays off by default** (`stream.start(require_auth=False)` / `requireAuth: false`),
   as upstream. The READMEs advise requiring auth whenever the stream URL leaves the caller's
   backend. Reasoning:
-  - The stream URL (`https://6080-<sandbox id>.boxfab.io/vnc.html`) contains the unguessable
+  - The stream URL (`https://6080-<sandbox id>.us-west.boxfab.dev/vnc.html`) contains the unguessable
     sandbox ID, like every sandbox port.
   - BoxFab serves sandbox hosts through wildcard DNS and a wildcard certificate, so IDs don't
     appear in DNS or certificate-transparency logs.

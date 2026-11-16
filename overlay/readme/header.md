@@ -22,7 +22,7 @@ core BoxFab SDKs: [`boxfab-desktop`](https://github.com/boxfab/python-sdk/tree/m
 
 ### 1. Get a BoxFab API key
 
-Get a key from the [BoxFab dashboard](https://dashboard.boxfab.io) and set it as
+Get a key from the [BoxFab dashboard](https://dashboard.us-west.boxfab.io) and set it as
 `BOXFAB_API_KEY`.
 
 ### 2. Install the SDK

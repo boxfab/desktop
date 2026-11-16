@@ -155,7 +155,7 @@ EXAMPLES_COMMON = [
      "", 1),
     ("### 1. Get E2B API key\n\nSign up at [E2B](https://e2b.dev) and get your API key.\n"
      "Set environment variable `E2B_API_KEY` with your API key.\n",
-     "### 1. Get a BoxFab API key\n\nGet a key from the [BoxFab dashboard](https://dashboard.boxfab.io) "
+     "### 1. Get a BoxFab API key\n\nGet a key from the [BoxFab dashboard](https://dashboard.us-west.boxfab.io) "
      "and set it as `BOXFAB_API_KEY`.\n", 1),
 ]
 
