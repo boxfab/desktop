@@ -10,7 +10,7 @@ It uses the Claude API's computer toolset (`computer_toolset_20260801`) with Cla
 
 ### 1. Get the API keys
 
-- A BoxFab API key from the [BoxFab dashboard](https://dashboard.boxfab.io), as `BOXFAB_API_KEY`.
+- A BoxFab API key from the [BoxFab dashboard](https://dashboard.us-west.boxfab.io), as `BOXFAB_API_KEY`.
 - An Anthropic API key from the [Claude Console](https://console.anthropic.com), as
   `ANTHROPIC_API_KEY`.
 

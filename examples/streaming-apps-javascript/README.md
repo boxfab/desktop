@@ -14,7 +14,7 @@ Streaming applications is a feature of BoxFab Desktop.
 
 ### 1. Get a BoxFab API key
 
-Get a key from the [BoxFab dashboard](https://dashboard.boxfab.io) and set it as `BOXFAB_API_KEY`.
+Get a key from the [BoxFab dashboard](https://dashboard.us-west.boxfab.io) and set it as `BOXFAB_API_KEY`.
 
 ### 2. Install SDK
 
